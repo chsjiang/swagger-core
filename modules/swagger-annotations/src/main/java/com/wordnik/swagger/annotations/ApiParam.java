@@ -35,6 +35,12 @@ public @interface ApiParam {
 
     /** Description of values this endpoint accepts */
     String allowableValues() default "";
+
+    /**
+     * Description of the class name that will provide the values this endpoint accepts
+     */
+    String allowableValuesByClass() default "";
+
     boolean required() default false;
     String access() default "";
     String internalDescription() default "";

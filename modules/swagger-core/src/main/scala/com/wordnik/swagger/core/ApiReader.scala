@@ -72,7 +72,7 @@ trait ApiSpecParserTrait extends BaseApiParser {
     docParam.description = readString(apiParam.value)
     docParam.defaultValue = readString(apiParam.defaultValue)
     try {
-      docParam.allowableValues = convertToAllowableValues(apiParam.allowableValues)
+      docParam.allowableValues = (convertToAllowableValues(apiParam.allowableValues) orElse convertToAllowableValuesByReflection(apiParam.allowableValuesByClass)).orNull
     } catch {
       case e: RuntimeException =>
         LOGGER.error("Allowable values annotation problem in method  " + method +
@@ -140,7 +140,7 @@ trait ApiSpecParserTrait extends BaseApiParser {
               docParam.description = readString(p.value)
               docParam.defaultValue = readString(p.defaultValue)
               try {
-                docParam.allowableValues = convertToAllowableValues(p.allowableValues)
+                docParam.allowableValues = convertToAllowableValues(p.allowableValues) orNull
               } catch {
                 case e: RuntimeException =>
                   LOGGER.error("Allowable values annotation problem in method  " + method +

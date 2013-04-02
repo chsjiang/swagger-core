@@ -209,7 +209,7 @@ class ApiModelParser(val hostClass: Class[_]) extends BaseApiParser {
 
           isDocumented = true
           try {
-            docParam.allowableValues = convertToAllowableValues(apiProperty.allowableValues)
+            docParam.allowableValues = convertToAllowableValues(apiProperty.allowableValues) orNull
           } catch {
             case e: RuntimeException => LOGGER.error("Allowable values annotation is wrong in for parameter " + docParam.name); e.printStackTrace();
           }

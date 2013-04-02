@@ -4,6 +4,8 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConverters._
+import com.wordnik.swagger.annotations.{AllowableValueIgnored, AllowableValuesByReflection}
+import java.lang.reflect.Modifier
 
 trait BaseApiParser {
   private val logger = LoggerFactory.getLogger(classOf[BaseApiParser])
@@ -30,24 +32,47 @@ trait BaseApiParser {
     }
   }
 
-  protected def convertToAllowableValues(csvString: String, paramType: String = null): DocumentationAllowableValues = {
+  protected def convertToAllowableValues(csvString: String, paramType: String = null): Option[DocumentationAllowableValues] = {
     if (csvString.toLowerCase.startsWith("range[")) {
       val ranges = csvString.substring(6, csvString.length() - 1).split(",")
-      return buildAllowableRangeValues(ranges, csvString)
+      return Some(buildAllowableRangeValues(ranges, csvString))
     } else if (csvString.toLowerCase.startsWith("rangeexclusive[")) {
       val ranges = csvString.substring(15, csvString.length() - 1).split(",")
-      return buildAllowableRangeValues(ranges, csvString)
+      return Some(buildAllowableRangeValues(ranges, csvString))
+    } else if (csvString.toLowerCase.startsWith("class[") ){
+      return convertToAllowableValuesByReflection(csvString.substring(6, csvString.length -1))
     } else {
       if (csvString == null || csvString.length == 0) {
-        null
+        None
       } else {
         val params = csvString.split(",").toList
         paramType match {
-          case null => new DocumentationAllowableListValues(params.asJava)
-          case "string" => new DocumentationAllowableListValues(params.asJava)
+          case null => Some(new DocumentationAllowableListValues(params.asJava))
+          case "string" => Some(new DocumentationAllowableListValues(params.asJava))
         }
       }
     }
+  }
+
+  protected def convertToAllowableValuesByReflection(className : String) : Option[DocumentationAllowableValues] = {
+    if (className == null || className.length == 0) {
+      None
+    } else {
+      val clazz = Class.forName(className)
+      val annot = clazz.getAnnotation(classOf[AllowableValuesByReflection]);
+      if (annot == null) {
+        None
+      }
+      else {
+      val values =
+      for {
+        f <- clazz.getDeclaredFields
+           if (f.getAnnotation(classOf[AllowableValueIgnored]) == null && !Modifier.isStatic(f.getModifiers))
+      } yield f.getName
+      Some(new DocumentationAllowableListValues(values.toList asJava))
+      }
+    }
+
   }
 
   private def buildAllowableRangeValues(ranges: Array[String], inputStr: String): DocumentationAllowableRangeValues = {
